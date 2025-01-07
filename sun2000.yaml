@@ -1,0 +1,81 @@
+esphome:
+  name: sun2000_modbus_client
+  platform: ESP32
+  board: esp32dev
+  
+  # (Optional) If you want to leverage ESP-IDF directly from ESPHome:
+  # build_type: release
+  # platformio_options:
+  #   platform: espressif32
+  #   board: esp32dev
+  #   framework: espidf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # If you need WPA2 Enterprise or advanced encryption, configure here accordingly.
+
+# Enable MQTT in ESPHome (unencrypted), or set up your own TLS-based MQTT externally
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_password
+  discovery: false
+  # For encrypted MQTT, refer to:
+  # https://esphome.io/components/mqtt.html#encrypted-mqtt-connections
+  # ssl_ca_cert: "/path/to/ca.crt"
+
+# External components references our custom code
+external_components:
+  - source: local
+    components: [my_modbus_component]
+
+# Instantiate the custom component
+custom_component:
+  - lambda: |-
+      auto *modbus_client = new my_modbus_component::MyModbusComponent();
+      // Set Huawei Inverter Modbus IP/Port
+      modbus_client->set_host("192.168.1.100");  // Replace with your inverter IP
+      modbus_client->set_port(502);             // Default Modbus TCP port is 502
+
+      // Optional: if you want to use TLS or secured connection
+      // modbus_client->set_use_tls(true);
+      // modbus_client->set_tls_certificate("-----BEGIN CERTIFICATE----- ...");
+
+      // Return the component to ESPHome
+      return {modbus_client};
+
+# Example sensor definitions that come from the custom component
+sensor:
+  - platform: custom
+    lambda: |-
+      auto *comp = (my_modbus_component::MyModbusComponent*) custom_components[0];
+      std::vector<sensor::Sensor *> sensors;
+      
+      // We add references to the sensors we want to expose
+      sensors.push_back(comp->pulse_inverter_status_sensor);
+      sensors.push_back(comp->pulse_battery_status_sensor);
+      sensors.push_back(comp->pulse_inverter_temperature_sensor);
+      // ... add as many as you need
+
+      return sensors;
+    sensors:
+      - name: "SUN2000 Inverter Status"
+      - name: "SUN2000 Battery Status"
+      - name: "SUN2000 Inverter Temperature"
+      # ... rename them as you wish
+
+# Example switch to Start/Stop battery charge
+switch:
+  - platform: template
+    name: "Start Battery Charge"
+    turn_on_action:
+      - lambda: |-
+          auto *comp = (my_modbus_component::MyModbusComponent*) custom_components[0];
+          comp->start_battery_charge();
+    turn_off_action:
+      - lambda: |-
+          auto *comp = (my_modbus_component::MyModbusComponent*) custom_components[0];
+          comp->stop_battery_charge();
+
+# Add more switches for discharge, stop export to grid, etc.
