@@ -1,0 +1,12 @@
+{
+    "name": "my_modbus_tcp",
+    "version": "1.0.0",
+    "frameworks": "esp-idf",
+    "platforms": ["espressif8266", "espressif32"],
+    "files": [
+      "modbus_tcp.cpp",
+      "modbus_tcp.h"
+    ],
+    "dependencies": []
+  }
+  

@@ -1,0 +1,45 @@
+esphome:
+  name: sun2000-inverter
+  platformio_options:
+    board: esp32dev
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: esp-idf
+
+
+wifi:
+  ssid: "Hotspot"
+  password: "1234567890"
+
+logger:
+
+# Load your external component from a local folder or GitHub
+external_components:
+  - source: "./external_components"
+    components: [ modbus_tcp ]
+    # Or source: github://<your-repo>
+
+# Now you can define modbus_tcp: in YAML
+modbus_tcp:
+  host: 192.168.43.47
+  port: 502
+  unit_id: 1
+
+# Then use it in modbus_controller:
+modbus_controller:
+  modbus_id: my_modbus_tcp
+  id: sun2000_controller
+  update_interval: 10s
+
+  sensors:
+    - address: 32016
+      name: "Sun2000 AC Power"
+      register_type: holding
+      value_type: U_WORD
+
+    - address: 32064
+      name: "Sun2000 Total Energy"
+      register_type: holding
+      value_type: U_DWORD
