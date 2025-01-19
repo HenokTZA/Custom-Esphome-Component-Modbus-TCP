@@ -1,0 +1,47 @@
+esphome:
+  name: modbus-tcp-test
+  platform: ESP32
+  board: esp32dev
+  # Place your includes here so the custom sensor can reference the header:
+  libraries:
+    - miq19/eModbus@^1.7.2
+    - "SPI"
+  includes:
+    - external_components/modbus_tcp/modbus_tcp_component.h
+
+
+
+wifi:
+  ssid: "Hotspot"
+  password: "1234567890"
+
+logger:
+  # ...
+
+# optional OTA:
+# ota:
+
+external_components:
+  - source:
+      type: local
+      path: "./external_components/modbus_tcp"
+
+sensor:
+  - platform: custom
+    lambda: |-
+      // Create an instance of your ModbusTCPComponent
+      auto modbus = new esphome::modbus_tcp::ModbusTCPComponent();
+
+      // Configure server IP/port and the register address you want to read
+      modbus->set_ip_address("192.168.43.47");
+      modbus->set_port(502);
+      modbus->set_register_address(0x200);
+
+      // Register the component so setup(), loop(), etc., are called
+      App.register_component(modbus);
+
+      // Return it as a sensor pointer
+      return {modbus};
+
+    sensors:
+      - name: "Modbus Register Value"
